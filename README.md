@@ -1,34 +1,45 @@
 # Digital Education Fund
 
-Education crowdfunding platform with responsive public website, donor accounts, campaign applications, admin moderation and Razorpay payment integration.
+Responsive education crowdfunding website with donor accounts, campaign applications, admin moderation, donation records and optional Razorpay checkout.
 
 ## Features
-- Public campaign directory and campaign details
-- Donor registration and login (bcrypt password hashing + JWT)
-- Campaign submission with admin approval/rejection workflow
-- Admin dashboard with totals, pending applications and donation records
-- Razorpay order creation and payment signature verification
-- Neon PostgreSQL database for persistent hosted data
-- Express API with rate limiting, Helmet security headers and input checks
+- Public list of approved education campaigns
+- Donor registration/login with bcrypt and JWT
+- Campaign application and admin approval/rejection
+- Admin dashboard with campaign statistics and donation records
+- Razorpay order creation and server-side signature verification
+- Neon PostgreSQL persistence, security headers and rate limiting
 
 ## Local setup
-1. Install Node.js 20 or newer.
+1. Install Node.js 20+ and create a PostgreSQL database (Neon is supported).
 2. Run `npm install`.
 3. Copy `.env.example` to `.env`.
-4. Set `DATABASE_URL` to a Neon PostgreSQL connection string.
-5. Set `JWT_SECRET` to a random secret with at least 32 characters.
-6. Set `ADMIN_EMAIL`, `ADMIN_PASSWORD`, `ADMIN_NAME`, and `ADMIN_BOOTSTRAP_TOKEN`.
-7. Set Razorpay test keys to enable test payments (optional).
-8. Run `npm start` and open http://localhost:3000.
+4. Configure `DATABASE_URL`, a random `JWT_SECRET` (32+ characters), `ADMIN_NAME`, `ADMIN_EMAIL`, `ADMIN_PASSWORD`, and `ADMIN_BOOTSTRAP_TOKEN`.
+5. Run `npm start` and open http://localhost:3000.
+6. Create the first administrator once:
+   ```bash
+   curl -X POST http://localhost:3000/api/admin/bootstrap -H 'x-bootstrap-token: YOUR_BOOTSTRAP_TOKEN'
+   ```
+7. Disable/remove the bootstrap endpoint after creating the admin.
 
-The database tables are created automatically on first API request. To create the first admin, call POST /api/admin/bootstrap with header `x-bootstrap-token: YOUR_ADMIN_BOOTSTRAP_TOKEN`. After successful creation, remove or rotate the bootstrap token.
+Database tables are created automatically on the first API request.
 
 ## Vercel deployment
-- Import this repository into Vercel.
-- Add all variables from `.env.example` in Project Settings → Environment Variables.
-- Use a Neon database; do not use a local SQLite file on Vercel.
-- Deploy after setting the environment variables.
-- Configure Razorpay webhook and test the full payment flow before accepting live contributions.
+1. Import this repository into Vercel.
+2. Provision Neon PostgreSQL and set `DATABASE_URL`.
+3. Set `JWT_SECRET`, `ADMIN_NAME`, `ADMIN_EMAIL`, `ADMIN_PASSWORD`, and `ADMIN_BOOTSTRAP_TOKEN` in Vercel Environment Variables.
+4. Optionally set `RAZORPAY_KEY_ID` and `RAZORPAY_KEY_SECRET`.
+5. Deploy and verify `/api/health`.
+6. Call the bootstrap endpoint once with the `x-bootstrap-token` header, then disable it and redeploy.
 
-## Security and compliance
-Never commit real secrets. Verify beneficiaries and supporting evidence before approval; obtain guardian consent where children are involved; protect minors' personal information; publish clear fees, refunds, privacy, grievance and fund-disbursement policies. Seek qualified Indian legal/accounting advice on the appropriate entity structure and applicable 80G, CSR and FCRA rules. Do not claim tax deductibility without legal eligibility and documentation.
+## API
+- `GET /api/health`, `GET /api/campaigns`
+- `POST /api/register`, `POST /api/login`
+- `POST /api/campaigns` (authenticated)
+- `POST /api/donations/order`, `POST /api/donations/verify`
+- `GET /api/admin/stats`, `GET /api/admin/campaigns`, `PATCH /api/admin/campaigns/:id`, `GET /api/admin/donations` (admin)
+
+## Before public fundraising
+This is a technical starter, not legal or financial advice. Verify beneficiaries and documents, obtain parent/guardian consent for minors, publish privacy/refund/grievance policies, and confirm applicable Indian KYC, tax, FCRA and payment-provider requirements. Do not promise 80G deductions, CSR eligibility or foreign-donation acceptance unless legally eligible and verified.
+
+Never commit `.env` or payment secrets. Use HTTPS, strong unique credentials and database backups.
